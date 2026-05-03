@@ -28,8 +28,9 @@ O projeto simula um cenário real de empresa, com dados organizados, dashboards 
 
 | Tecnologia | Uso |
 | --- | --- |
-| Salesforce | Modelagem de dados, armazenamento, dashboards, automações |
-| Salesforce Flow | Automação e integração com a API |
+| Salesforce Developer Edition | Modelagem de dados, armazenamento, dashboards, automações |
+| Salesforce Flow | Automação e integração com a API via Apex |
+| Apex (Salesforce) | Classe de integração HTTP com a API Python |
 
 ### Backend / Análise
 
@@ -37,7 +38,17 @@ O projeto simula um cenário real de empresa, com dados organizados, dashboards 
 | --- | --- |
 | FastAPI | Criação da API e endpoints |
 | Pandas | Manipulação e análise dos dados |
-| Python | Lógica de negócio e geração de insights |
+| Python 3.11 | Lógica de negócio e geração de insights |
+| Uvicorn | Servidor ASGI para rodar a API |
+| Render | Hospedagem gratuita da API em produção |
+
+### Ferramentas
+
+| Tecnologia | Uso |
+| --- | --- |
+| GitHub | Versionamento do código |
+| Faker (Python) | Geração automática de dados de teste |
+| Swagger UI | Documentação e teste da API |
 
 ---
 
@@ -82,9 +93,10 @@ Objeto principal do sistema — registra todas as entradas e saídas financeiras
 | Data__c | Date | Data da movimentação |
 | Descricao__c | Text Area | Descrição detalhada |
 | Categoria__c | Lookup | Relacionamento com Categoria |
-| CentroDeCusto__c | Lookup | Relacionamento com Centro de Custo |
+| Centro_de_Custo__c | Lookup | Relacionamento com Centro de Custo |
 | Departamento__c | Lookup | Relacionamento com Departamento |
 | Status_Icon__c | Formula (Text) | Ícone visual: 🟢 para Receita e 🔴 para Despesa |
+| Insight__c | Long Text Area | Insights gerados automaticamente pela API Python |
 
 ---
 
@@ -108,20 +120,26 @@ Departamento
     │  Usuário cadastra movimentações
     │
     ▼
-[Salesforce Flow]
+[Salesforce Flow - Record Triggered]
     │
-    │  Envia dados via HTTP para a API
+    │  Disparado ao criar uma Movimentação
     │
     ▼
-[API Python - FastAPI]
+[Apex Class - APIFinanceiraCallout]
+    │
+    │  Monta o JSON e faz chamada HTTP
+    │
+    ▼
+[API Python - FastAPI no Render]
     │
     │  Processa dados com Pandas
     │  Gera insights automáticos
+    │  Verifica desvio de orçamento
     │
     ▼
 [Salesforce]
     │
-    │  Recebe os resultados
+    │  Salva o insight no campo Insight__c
     │
     ▼
 [Dashboards & Reports]
@@ -133,7 +151,9 @@ Departamento
 
 ```
 api/
- ├── main.py               # Inicialização da aplicação
+ ├── main.py               # Inicialização da aplicação FastAPI
+ ├── requirements.txt      # Dependências do projeto
+ ├── render.yaml           # Configuração de deploy no Render
  ├── routers/              # Endpoints separados por domínio
  │    └── movimentacoes.py
  ├── services/             # Regras de negócio e análises
@@ -146,33 +166,87 @@ api/
 
 ---
 
+## 🌐 API em Produção
+
+A API está hospedada no Render e pode ser acessada publicamente:
+
+- **URL Base:** `https://sistema-financeiro-salesforce.onrender.com`
+- **Documentação Swagger:** `https://sistema-financeiro-salesforce.onrender.com/docs`
+- **Schema OpenAPI:** `https://sistema-financeiro-salesforce.onrender.com/openapi.json`
+
+> ⚠️ O plano gratuito do Render pode demorar até 50 segundos para responder após período de inatividade.
+
+### Endpoint Principal
+
+**POST** `/api/analisar`
+
+Recebe uma lista de movimentações e orçamentos, retorna insights financeiros automáticos.
+
+**Exemplo de Request:**
+```json
+{
+  "movimentacoes": [
+    {
+      "nome": "MOV-0001",
+      "valor": 35000,
+      "tipo": "Receita",
+      "data": "2026-01-15",
+      "descricao": "Venda de serviços",
+      "categoria": "Serviços",
+      "centro_de_custo": "Equipe Comercial",
+      "departamento": "Comercial"
+    }
+  ],
+  "orcamentos": {
+    "Equipe Comercial": 40000
+  }
+}
+```
+
+**Exemplo de Response:**
+```json
+{
+  "total_receitas": 35000.0,
+  "total_despesas": 0.0,
+  "saldo": 35000.0,
+  "maior_gasto_categoria": "N/A",
+  "maior_gasto_departamento": "N/A",
+  "alertas_orcamento": [],
+  "insights": [
+    "💰 Total de Receitas: R$35000.00",
+    "💸 Total de Despesas: R$0.00",
+    "📊 Saldo Final: R$35000.00"
+  ]
+}
+```
+
+---
+
 ## 📊 Dashboards e Visualização (Salesforce)
 
 Os dashboards nativos do Salesforce exibem:
 
-- ✅ Total de receitas
-- ✅ Total de despesas
-- ✅ Saldo financeiro (receitas - despesas)
-- ✅ Gastos por categoria
-- ✅ Gastos por departamento
-- ✅ Evolução financeira ao longo do tempo
+- ✅ Movimentações por Tipo (Receita/Despesa) — Gráfico Donut
+- ✅ Gastos por Departamento — Gráfico de Barras Horizontal
+- ✅ Gastos por Categoria — Gráfico de Barras Horizontal
 
 ---
 
 ## 🧠 Análises Realizadas pela API Python
 
-- Cálculo de totais (receitas e despesas)
+- Cálculo de totais de receitas e despesas
+- Cálculo do saldo financeiro
 - Identificação da maior categoria de gasto
-- Comparações entre períodos
-- Geração de insights automáticos em texto
+- Identificação do departamento com mais gastos
 - Desvio de Orçamento — alerta quando o total de despesas de um Centro de Custo ultrapassa o orçamento definido
+- Geração de insights automáticos em texto
 
 ---
 
 ## 📥 Formas de Inserção de Dados
 
 - Inserção manual no Salesforce
-- Importação via arquivo CSV
+- Importação via arquivo CSV (Data Import Wizard)
 - Geração automática com Python (biblioteca Faker)
 
 ---
@@ -188,55 +262,59 @@ Os dashboards nativos do Salesforce exibem:
 - [x] Criar objeto `CentroDeCusto__c` com Lookup para Departamento
 - [x] Criar objeto `Movimentacao__c` com todos os campos e Lookups
 - [x] Criar campo de fórmula `Status_Icon__c` em `Movimentacao__c` (🟢 Receita / 🔴 Despesa)
+- [x] Criar app customizado **Sistema Financeiro** no Salesforce
 - [x] Testar os relacionamentos criando registros manualmente
 
 ### 🟡 Fase 2 — Dados de Teste
 
 > Objetivo: popular o sistema com dados realistas
 
-- [x] Inserir categorias manualmente (ex: Salários, Marketing, Vendas)
-- [x] Inserir departamentos (ex: Financeiro, RH, TI)
-- [x] Inserir centros de custo com orçamentos
+- [x] Inserir 7 categorias manualmente (Salários, Marketing, Infraestrutura, Impostos, Vendas, Serviços, Investimentos)
+- [x] Inserir 5 departamentos (Financeiro, Recursos Humanos, Tecnologia, Marketing, Comercial)
+- [x] Inserir 5 centros de custo com orçamentos
 - [x] Criar script Python com Faker para gerar movimentações em CSV
-- [x] Importar CSV de movimentações no Salesforce via Data Import Wizard
+- [x] Importar 50 movimentações no Salesforce via Data Import Wizard
 
 ### 🔵 Fase 3 — Relatórios e Dashboards (Salesforce)
 
 > Objetivo: visualizar os dados no Salesforce
 
+- [x] Criar Report Type customizado para Movimentacoes
 - [x] Criar Report de movimentações por tipo (Receita/Despesa)
 - [x] Criar Report de gastos por departamento
 - [x] Criar Report de gastos por categoria
-- [x] Montar Dashboard com os principais indicadores financeiros
+- [x] Montar Dashboard **Indicadores Financeiros** com 3 gráficos
 
 ### 🔴 Fase 4 — API Python
 
 > Objetivo: construir o backend de análise
 
 - [x] Criar projeto FastAPI com a estrutura de pastas definida
-- [x] Criar endpoint POST /analisar que recebe lista de movimentações
-- [x] Implementar análise com Pandas (totais, maiores gastos, etc.)
+- [x] Criar endpoint `POST /api/analisar` que recebe lista de movimentações
+- [x] Implementar análise com Pandas (totais, maiores gastos, saldo)
 - [x] Implementar lógica de desvio de orçamento por Centro de Custo
 - [x] Retornar insights em formato JSON
-- [x] Testar a API localmente via Swagger (http://localhost:8000/docs)
+- [x] Testar a API localmente via Swagger (`http://localhost:8000/docs`)
 
 ### ⚫ Fase 5 — Integração Salesforce → API
 
 > Objetivo: conectar as duas plataformas
 
-- [ ] Fazer deploy da API no Render (plano gratuito) para ter uma URL pública
-- [ ] Configurar Named Credential no Salesforce com a URL da API
-- [ ] Usar External Services no Salesforce para importar o esquema JSON (Swagger) da API
-- [ ] Criar Flow no Salesforce disparado ao salvar uma Movimentação
-- [ ] Configurar chamada HTTP no Flow usando o Named Credential
-- [ ] Receber a resposta e salvar o insight em um campo do registro
-- [ ] Testar o fluxo completo ponta a ponta
+- [x] Fazer deploy da API no Render (plano gratuito)
+- [x] Configurar Remote Site Settings no Salesforce para autorizar a URL da API
+- [x] Criar classe Apex `APIFinanceiraCallout` com método `@InvocableMethod`
+- [x] Criar Flow Record-Triggered disparado ao criar uma Movimentação
+- [x] Configurar chamada HTTP na classe Apex usando a URL da API
+- [x] Receber a resposta e salvar o insight no campo `Insight__c`
+- [x] Testar o fluxo completo ponta a ponta com sucesso
+
+> **Observação:** A integração funciona ao **criar** uma Movimentação. Para updates, o caminho assíncrono do Flow requer configurações adicionais disponíveis em ambientes Salesforce completos (Enterprise+).
 
 ### 🔥 Fase 6 — Refinamento Final
 
 > Objetivo: polir o projeto para portfólio
 
-- [ ] Revisar a documentação
+- [x] Revisar e atualizar a documentação
 - [ ] Tirar prints dos dashboards e da API funcionando
 - [ ] Gravar vídeo curto demonstrando o sistema (opcional, mas valoriza muito)
 - [ ] Publicar no GitHub com README bem escrito
@@ -253,14 +331,14 @@ Os dashboards nativos do Salesforce exibem:
 - Approval Process — Aprovação de movimentações acima de determinado valor
 - Permission Sets — Controle de quem pode ver/editar cada tipo de dado
 - Platform Events — Forma mais profissional de integrar com sistemas externos
-- Named Credential — Gerenciamento seguro da URL e autenticação da API no Flow
-- External Services — Importar esquema Swagger da API para o Flow entender os campos nativamente
+- Integração via Flow update — Fazer o Flow disparar também ao atualizar registros
 
 ### Melhorias na API
 
 - Autenticação JWT — Segurança nos endpoints
 - Banco de dados — SQLite ou PostgreSQL com SQLAlchemy
 - Testes automatizados — Pytest para garantir que a API funciona corretamente
+- Upgrade do Render — Plano pago para eliminar o cold start de 50 segundos
 
 ### Melhorias Avançadas
 
@@ -273,10 +351,12 @@ Os dashboards nativos do Salesforce exibem:
 
 ## 💡 Diferenciais do Projeto
 
-- Integração real entre Salesforce e Python
-- Modelagem de dados estruturada com objetos customizados
-- Dashboards nativos do Salesforce
+- Integração real entre Salesforce e Python via Apex + HTTP Callout
+- Modelagem de dados estruturada com objetos e relacionamentos customizados
+- Dashboards nativos do Salesforce com 3 visões dos dados
 - Análise de dados aplicada com FastAPI + Pandas
+- Detecção automática de desvio de orçamento
+- Deploy real em produção com URL pública
 - Simulação de cenário empresarial real
 - Documentação clara e organizada
 
