@@ -1,0 +1,116 @@
+<template>
+    <lightning-card>
+        <div class="card-header" slot="title">
+            <span class="header-icon">📊</span>
+            <span class="header-title">Análise Financeira</span>
+        </div>
+
+        <div class="container">
+
+            <!-- LOADING -->
+            <template if:true={isLoading}>
+                <div class="loading-wrapper">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Carregando insights...</p>
+                </div>
+            </template>
+
+            <!-- ERRO -->
+            <template if:true={hasError}>
+                <div class="empty-state">
+                    <span class="empty-icon">⚠️</span>
+                    <p class="empty-text">Nenhum insight disponível para esta movimentação.</p>
+                </div>
+            </template>
+
+            <!-- CONTEÚDO -->
+            <template if:true={hasData}>
+
+                <!-- KPI CARDS -->
+                <div class="kpi-grid">
+                    <div class="kpi-card kpi-receita">
+                        <div class="kpi-top">
+                            <span class="kpi-icon">💰</span>
+                            <span class="kpi-label">Total Receitas</span>
+                        </div>
+                        <div class="kpi-value">{totalReceitas}</div>
+                        <div class="kpi-bar">
+                            <div class="kpi-bar-fill receita-fill" style={receitaBarStyle}></div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card kpi-despesa">
+                        <div class="kpi-top">
+                            <span class="kpi-icon">💸</span>
+                            <span class="kpi-label">Total Despesas</span>
+                        </div>
+                        <div class="kpi-value">{totalDespesas}</div>
+                        <div class="kpi-bar">
+                            <div class="kpi-bar-fill despesa-fill" style={despesaBarStyle}></div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card kpi-saldo">
+                        <div class="kpi-top">
+                            <span class="kpi-icon">📈</span>
+                            <span class="kpi-label">Saldo Final</span>
+                        </div>
+                        <div class="kpi-value kpi-saldo-value">{saldo}</div>
+                        <div class="kpi-badge">
+                            <span class={saldoBadgeClass}>{saldoStatus}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DESTAQUES -->
+                <div class="destaques-grid">
+                    <div class="destaque-card">
+                        <div class="destaque-icon">🏷️</div>
+                        <div class="destaque-info">
+                            <span class="destaque-label">Maior Gasto por Categoria</span>
+                            <span class="destaque-value">{maiorCategoria}</span>
+                        </div>
+                    </div>
+                    <div class="destaque-card">
+                        <div class="destaque-icon">🏢</div>
+                        <div class="destaque-info">
+                            <span class="destaque-label">Maior Gasto por Departamento</span>
+                            <span class="destaque-value">{maiorDepartamento}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ALERTAS -->
+                <template if:true={hasAlertas}>
+                    <div class="alertas-section">
+                        <div class="alertas-header">
+                            <span>⚠️</span>
+                            <span class="alertas-title">Alertas de Orçamento</span>
+                        </div>
+                        <template for:each={alertas} for:item="alerta">
+                            <div key={alerta} class="alerta-item">
+                                <span class="alerta-dot"></span>
+                                <span class="alerta-text">{alerta}</span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- INSIGHTS LISTA -->
+                <div class="insights-section">
+                    <div class="insights-header">
+                        <span>🧠</span>
+                        <span class="insights-title">Resumo dos Insights</span>
+                    </div>
+                    <template for:each={insights} for:item="item">
+                        <div key={item.id} class="insight-row">
+                            <span class="insight-bullet">▸</span>
+                            <span class="insight-text">{item.texto}</span>
+                        </div>
+                    </template>
+                </div>
+
+            </template>
+        </div>
+    </lightning-card>
+</template>
