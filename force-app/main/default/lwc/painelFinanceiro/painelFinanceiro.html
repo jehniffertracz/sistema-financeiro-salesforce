@@ -1,0 +1,107 @@
+<template>
+    <div class="painel-container">
+
+        <!-- HEADER -->
+        <div class="painel-header">
+            <div class="header-left">
+                <span class="header-icon">📊</span>
+                <div>
+                    <h1 class="header-title">Painel Financeiro</h1>
+                    <p class="header-subtitle">Visão geral de todas as movimentações</p>
+                </div>
+            </div>
+            <div class="header-badge">
+                <span class="badge-dot"></span>
+                <span class="badge-text">Ao vivo</span>
+            </div>
+        </div>
+
+        <!-- LOADING -->
+        <template if:true={isLoading}>
+            <div class="loading-wrapper">
+                <div class="spinner"></div>
+                <p class="loading-text">Carregando dados financeiros...</p>
+            </div>
+        </template>
+
+        <template if:false={isLoading}>
+
+            <!-- KPI CARDS -->
+            <div class="kpi-grid">
+                <div class="kpi-card kpi-receita">
+                    <div class="kpi-top">
+                        <span class="kpi-icon">💰</span>
+                        <span class="kpi-label">Total Receitas</span>
+                    </div>
+                    <div class="kpi-value">{totalReceitas}</div>
+                    <div class="kpi-footer">+{totalMovimentacoes} movimentações</div>
+                </div>
+
+                <div class="kpi-card kpi-despesa">
+                    <div class="kpi-top">
+                        <span class="kpi-icon">💸</span>
+                        <span class="kpi-label">Total Despesas</span>
+                    </div>
+                    <div class="kpi-value">{totalDespesas}</div>
+                    <div class="kpi-footer">{totalDepartamentos} departamentos</div>
+                </div>
+
+                <div class="kpi-card kpi-saldo">
+                    <div class="kpi-top">
+                        <span class="kpi-icon">📈</span>
+                        <span class="kpi-label">Saldo Geral</span>
+                    </div>
+                    <div class="kpi-value">{saldoGeral}</div>
+                    <div class="kpi-footer">
+                        <span class={saldoBadgeClass}>{saldoStatus}</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card kpi-categorias">
+                    <div class="kpi-top">
+                        <span class="kpi-icon">🏷️</span>
+                        <span class="kpi-label">Categorias Ativas</span>
+                    </div>
+                    <div class="kpi-value">{totalCategorias}</div>
+                    <div class="kpi-footer">categorias cadastradas</div>
+                </div>
+            </div>
+
+            <!-- GRÁFICOS -->
+            <div class="charts-grid">
+
+                <!-- Donut Receita x Despesa -->
+                <div class="chart-card chart-small">
+                    <div class="chart-header">
+                        <span class="chart-title">Receitas vs Despesas</span>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas class="chart-canvas" lwc:ref="donutChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Barras por Departamento -->
+                <div class="chart-card chart-large">
+                    <div class="chart-header">
+                        <span class="chart-title">Gastos por Departamento</span>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas class="chart-canvas" lwc:ref="barChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Barras por Categoria -->
+                <div class="chart-card chart-full">
+                    <div class="chart-header">
+                        <span class="chart-title">Gastos por Categoria</span>
+                    </div>
+                    <div class="chart-wrapper chart-wrapper-full">
+                        <canvas class="chart-canvas" lwc:ref="categoriaChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+        </template>
+    </div>
+</template>
