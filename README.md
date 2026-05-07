@@ -1,14 +1,14 @@
 # 💼 Sistema de Análise Financeira Empresarial
 
-**Projeto — Salesforce + Python (FastAPI)**
+**Projeto — Salesforce + Python (FastAPI) + Lightning Web Components**
 
 ---
 
 ## 📌 Sobre o Projeto
 
-Sistema de controle e análise financeira empresarial desenvolvido com Salesforce como plataforma principal, integrado a uma API em Python (FastAPI) para processamento de dados e geração de insights automáticos.
+Sistema de controle e análise financeira empresarial desenvolvido com **Salesforce** como plataforma principal, integrado a uma **API em Python (FastAPI)** para processamento de dados e geração de insights automáticos, e **Lightning Web Components (LWC)** para visualizações modernas e interativas.
 
-O projeto simula um cenário real de empresa, com dados organizados, dashboards interativos e análises automatizadas — e serve como portfólio prático de desenvolvimento Salesforce.
+O projeto simula um cenário real de empresa, com dados organizados, dashboards interativos, análises automatizadas e componentes visuais customizados — servindo como portfólio prático de desenvolvimento Salesforce em nível intermediário-avançado.
 
 ---
 
@@ -16,9 +16,10 @@ O projeto simula um cenário real de empresa, com dados organizados, dashboards 
 
 - Centralizar dados financeiros empresariais no Salesforce
 - Estruturar informações de forma organizada e escalável
-- Gerar relatórios e dashboards nativos
+- Gerar relatórios e dashboards nativos e customizados com LWC
 - Aplicar análise de dados com Python
 - Apoiar a tomada de decisão baseada em dados
+- Demonstrar integração real entre plataformas (Salesforce ↔ Python)
 
 ---
 
@@ -30,7 +31,9 @@ O projeto simula um cenário real de empresa, com dados organizados, dashboards 
 | --- | --- |
 | Salesforce Developer Edition | Modelagem de dados, armazenamento, dashboards, automações |
 | Salesforce Flow | Automação e integração com a API via Apex |
-| Apex (Salesforce) | Classe de integração HTTP com a API Python |
+| Apex (Salesforce) | Classes de integração HTTP e controllers para LWC |
+| Lightning Web Components (LWC) | Componentes visuais customizados com Chart.js |
+| Chart.js | Biblioteca de gráficos interativos via Static Resources |
 
 ### Backend / Análise
 
@@ -47,6 +50,8 @@ O projeto simula um cenário real de empresa, com dados organizados, dashboards 
 | Tecnologia | Uso |
 | --- | --- |
 | GitHub | Versionamento do código |
+| Salesforce CLI (sf) | Deploy e gerenciamento de metadados |
+| VS Code + Salesforce Extension Pack | Desenvolvimento e deploy dos componentes |
 | Faker (Python) | Geração automática de dados de teste |
 | Swagger UI | Documentação e teste da API |
 
@@ -127,7 +132,9 @@ Departamento
     ▼
 [Apex Class - APIFinanceiraCallout]
     │
-    │  Monta o JSON e faz chamada HTTP
+    │  Busca histórico completo do departamento
+    │  Serializa payload com JSON.serialize()
+    │  Faz chamada HTTP assíncrona
     │
     ▼
 [API Python - FastAPI no Render]
@@ -142,27 +149,77 @@ Departamento
     │  Salva o insight no campo Insight__c
     │
     ▼
-[Dashboards & Reports]
+[LWC insightCard]             [LWC painelFinanceiro]
+    │                               │
+    │  Exibe KPIs, alertas          │  Exibe gráficos Chart.js
+    │  e insights formatados        │  com visão consolidada
+    │  na Record Page               │  na App Page
 ```
 
 ---
 
-## 📂 Estrutura da API (Python)
+## 📂 Estrutura do Projeto
 
 ```
-api/
- ├── main.py               # Inicialização da aplicação FastAPI
- ├── requirements.txt      # Dependências do projeto
- ├── render.yaml           # Configuração de deploy no Render
- ├── routers/              # Endpoints separados por domínio
- │    └── movimentacoes.py
- ├── services/             # Regras de negócio e análises
- │    └── analise.py
- ├── models/               # Modelos de dados
- │    └── movimentacao.py
- └── schemas/              # Validação de entrada e saída (Pydantic)
-      └── movimentacao.py
+sistema-financeiro-salesforce/
+ ├── api/                          # API Python (FastAPI)
+ │    ├── main.py
+ │    ├── requirements.txt
+ │    ├── render.yaml
+ │    ├── routers/
+ │    │    └── movimentacoes.py
+ │    ├── services/
+ │    │    └── analise.py
+ │    ├── models/
+ │    │    └── movimentacao.py
+ │    └── schemas/
+ │         └── movimentacao.py
+ │
+ └── force-app/main/default/
+      ├── classes/
+      │    ├── APIFinanceiraCallout.cls          # Integração HTTP com a API Python
+      │    └── PainelFinanceiroController.cls    # Controller Apex para o LWC de painel
+      └── lwc/
+           ├── insightCard/                      # Card de insights na Record Page
+           │    ├── insightCard.html
+           │    ├── insightCard.js
+           │    ├── insightCard.css
+           │    └── insightCard.js-meta.xml
+           └── painelFinanceiro/                 # Painel com gráficos Chart.js
+                ├── painelFinanceiro.html
+                ├── painelFinanceiro.js
+                ├── painelFinanceiro.css
+                └── painelFinanceiro.js-meta.xml
 ```
+
+---
+
+## ⚡ Lightning Web Components (LWC)
+
+### 📊 insightCard
+
+Componente exibido na **Record Page** de cada Movimentação. Lê o campo `Insight__c` (JSON gerado pela API Python) e apresenta os dados de forma visual e organizada.
+
+**Funcionalidades:**
+- KPIs de Total de Receitas, Despesas e Saldo com formatação BRL
+- Barras de progresso relativas entre receita e despesa
+- Badge de saldo positivo/negativo
+- Cards de maior gasto por categoria e departamento
+- Alertas de orçamento estourado com formatação monetária
+- Resumo dos insights em lista estruturada
+- Estado de loading e tratamento de erro
+
+### 📈 painelFinanceiro
+
+Componente exibido em **App Page** dedicada no app Sistema Financeiro. Consulta todas as movimentações via Apex e renderiza gráficos interativos com Chart.js.
+
+**Funcionalidades:**
+- 4 KPI Cards — Receitas, Despesas, Saldo Geral e Categorias Ativas
+- Gráfico Donut — Receitas vs Despesas
+- Gráfico de Barras Horizontal — Gastos por Departamento
+- Gráfico de Barras Vertical — Gastos por Categoria
+- Badge "Ao vivo" com animação pulsante
+- Dados em tempo real via Apex Controller com `cacheable=true`
 
 ---
 
@@ -213,33 +270,42 @@ Recebe uma lista de movimentações e orçamentos, retorna insights financeiros 
   "maior_gasto_departamento": "N/A",
   "alertas_orcamento": [],
   "insights": [
-    "💰 Total de Receitas: R$35000.00",
-    "💸 Total de Despesas: R$0.00",
-    "📊 Saldo Final: R$35000.00"
+    "Total de Receitas: R$ 35.000,00",
+    "Total de Despesas: R$ 0,00",
+    "Saldo Final: R$ 35.000,00"
   ]
 }
 ```
 
 ---
 
-## 📊 Dashboards e Visualização (Salesforce)
+## 📊 Visualizações do Sistema
 
-Os dashboards nativos do Salesforce exibem:
-
+### Dashboard Nativo (Salesforce)
 - ✅ Movimentações por Tipo (Receita/Despesa) — Gráfico Donut
 - ✅ Gastos por Departamento — Gráfico de Barras Horizontal
 - ✅ Gastos por Categoria — Gráfico de Barras Horizontal
+
+### LWC insightCard (Record Page)
+- ✅ KPIs individuais por movimentação com histórico do departamento
+- ✅ Alertas de orçamento em tempo real
+- ✅ Resumo de insights gerados pela API Python
+
+### LWC painelFinanceiro (App Page)
+- ✅ Visão consolidada de todas as movimentações
+- ✅ Gráficos interativos com Chart.js
+- ✅ Dados atualizados diretamente do Salesforce via Apex
 
 ---
 
 ## 🧠 Análises Realizadas pela API Python
 
-- Cálculo de totais de receitas e despesas
+- Cálculo de totais de receitas e despesas do departamento completo
 - Cálculo do saldo financeiro
 - Identificação da maior categoria de gasto
 - Identificação do departamento com mais gastos
-- Desvio de Orçamento — alerta quando o total de despesas de um Centro de Custo ultrapassa o orçamento definido
-- Geração de insights automáticos em texto
+- Detecção de desvio de orçamento por Centro de Custo
+- Geração de insights automáticos em texto formatado
 
 ---
 
@@ -253,121 +319,114 @@ Os dashboards nativos do Salesforce exibem:
 
 ## 🚀 Roadmap de Desenvolvimento
 
-### 🟢 Fase 1 — Modelagem de Dados (Salesforce)
-
-> Objetivo: criar a estrutura base no Salesforce
+### 🟢 Fase 1 — Modelagem de Dados (Salesforce) ✅
 
 - [x] Criar objeto `Categoria__c` com campos e picklist de Tipo
 - [x] Criar objeto `Departamento__c`
 - [x] Criar objeto `CentroDeCusto__c` com Lookup para Departamento
 - [x] Criar objeto `Movimentacao__c` com todos os campos e Lookups
-- [x] Criar campo de fórmula `Status_Icon__c` em `Movimentacao__c` (🟢 Receita / 🔴 Despesa)
+- [x] Criar campo de fórmula `Status_Icon__c` — 🟢 Receita / 🔴 Despesa
 - [x] Criar app customizado **Sistema Financeiro** no Salesforce
 - [x] Testar os relacionamentos criando registros manualmente
 
-### 🟡 Fase 2 — Dados de Teste
+### 🟡 Fase 2 — Dados de Teste ✅
 
-> Objetivo: popular o sistema com dados realistas
-
-- [x] Inserir 7 categorias manualmente (Salários, Marketing, Infraestrutura, Impostos, Vendas, Serviços, Investimentos)
-- [x] Inserir 5 departamentos (Financeiro, Recursos Humanos, Tecnologia, Marketing, Comercial)
+- [x] Inserir 7 categorias (Salários, Marketing, Infraestrutura, Impostos, Vendas, Serviços, Investimentos)
+- [x] Inserir 5 departamentos (Financeiro, RH, Tecnologia, Marketing, Comercial)
 - [x] Inserir 5 centros de custo com orçamentos
 - [x] Criar script Python com Faker para gerar movimentações em CSV
 - [x] Importar 50 movimentações no Salesforce via Data Import Wizard
 
-### 🔵 Fase 3 — Relatórios e Dashboards (Salesforce)
+### 🔵 Fase 3 — Relatórios e Dashboards Nativos (Salesforce) ✅
 
-> Objetivo: visualizar os dados no Salesforce
-
-- [x] Criar Report Type customizado para Movimentacoes
+- [x] Criar Report Type customizado para Movimentações
 - [x] Criar Report de movimentações por tipo (Receita/Despesa)
 - [x] Criar Report de gastos por departamento
 - [x] Criar Report de gastos por categoria
 - [x] Montar Dashboard **Indicadores Financeiros** com 3 gráficos
 
-### 🔴 Fase 4 — API Python
-
-> Objetivo: construir o backend de análise
+### 🔴 Fase 4 — API Python ✅
 
 - [x] Criar projeto FastAPI com a estrutura de pastas definida
-- [x] Criar endpoint `POST /api/analisar` que recebe lista de movimentações
+- [x] Criar endpoint `POST /api/analisar`
 - [x] Implementar análise com Pandas (totais, maiores gastos, saldo)
 - [x] Implementar lógica de desvio de orçamento por Centro de Custo
 - [x] Retornar insights em formato JSON
-- [x] Testar a API localmente via Swagger (`http://localhost:8000/docs`)
+- [x] Testar a API localmente via Swagger
 
-### ⚫ Fase 5 — Integração Salesforce → API
+### ⚫ Fase 5 — Integração Salesforce → API ✅
 
-> Objetivo: conectar as duas plataformas
-
-- [x] Fazer deploy da API no Render (plano gratuito)
-- [x] Configurar Remote Site Settings no Salesforce para autorizar a URL da API
-- [x] Criar classe Apex `APIFinanceiraCallout` com método `@InvocableMethod`
+- [x] Fazer deploy da API no Render
+- [x] Configurar Remote Site Settings no Salesforce
+- [x] Criar classe Apex `APIFinanceiraCallout` com `@InvocableMethod`
+- [x] Refatorar a classe seguindo boas práticas Apex (métodos separados, `JSON.serialize()`, try/catch)
+- [x] Expandir a integração para enviar histórico completo do departamento
 - [x] Criar Flow Record-Triggered disparado ao criar uma Movimentação
-- [x] Configurar chamada HTTP na classe Apex usando a URL da API
 - [x] Receber a resposta e salvar o insight no campo `Insight__c`
 - [x] Testar o fluxo completo ponta a ponta com sucesso
 
 > **Observação:** A integração funciona ao **criar** uma Movimentação. Para updates, o caminho assíncrono do Flow requer configurações adicionais disponíveis em ambientes Salesforce completos (Enterprise+).
 
-### 🔥 Fase 6 — Refinamento Final
+### 🔥 Fase 6 — Lightning Web Components (LWC) ✅
 
-> Objetivo: polir o projeto para portfólio
-
-- [x] Revisar e atualizar a documentação
-- [ ] Tirar prints dos dashboards e da API funcionando
-- [ ] Gravar vídeo curto demonstrando o sistema (opcional, mas valoriza muito)
-- [ ] Publicar no GitHub com README bem escrito
+- [x] Criar componente `insightCard` para a Record Page de Movimentação
+- [x] Exibir KPIs, alertas e insights com formatação monetária brasileira (BRL)
+- [x] Criar componente `painelFinanceiro` para App Page dedicada
+- [x] Integrar Chart.js via Static Resources para gráficos interativos
+- [x] Criar `PainelFinanceiroController` — Apex Controller com boas práticas
+- [x] Adicionar painel ao app Sistema Financeiro na navegação
+- [x] Deploy de todos os componentes via Salesforce CLI
+- [x] Commitar toda a estrutura Salesforce no GitHub
 
 ---
 
 ## 📋 Melhorias Futuras
 
-> Não fazem parte do escopo atual — registradas para não esquecer
+> Não fazem parte do escopo atual — registradas para evolução do projeto.
 
-### Melhorias no Salesforce
+### Salesforce
+- **Validation Rules** — Impedir valor negativo, data futura, campos obrigatórios
+- **Approval Process** — Aprovação de movimentações acima de determinado valor
+- **Permission Sets** — Controle de acesso por perfil
+- **Platform Events** — Integração mais robusta com sistemas externos
+- **Flow update trigger** — Disparar o Flow também ao atualizar registros
 
-- Validation Rules — Impedir valor negativo, data futura, campos obrigatórios
-- Approval Process — Aprovação de movimentações acima de determinado valor
-- Permission Sets — Controle de quem pode ver/editar cada tipo de dado
-- Platform Events — Forma mais profissional de integrar com sistemas externos
-- Integração via Flow update — Fazer o Flow disparar também ao atualizar registros
+### API Python
+- **Autenticação JWT** — Segurança nos endpoints
+- **Banco de dados** — SQLite ou PostgreSQL com SQLAlchemy
+- **Testes automatizados** — Pytest
+- **Upgrade do Render** — Plano pago para eliminar cold start
 
-### Melhorias na API
-
-- Autenticação JWT — Segurança nos endpoints
-- Banco de dados — SQLite ou PostgreSQL com SQLAlchemy
-- Testes automatizados — Pytest para garantir que a API funciona corretamente
-- Upgrade do Render — Plano pago para eliminar o cold start de 50 segundos
-
-### Melhorias Avançadas
-
-- Lightning Web Components (LWC) — Interface customizada dentro do Salesforce
-- OAuth 2.0 — Autenticação segura entre Salesforce e API
-- Machine Learning — Previsão de gastos futuros
-- Alertas automáticos — Notificação ao ultrapassar orçamento
+### LWC & Avançado
+- **Filtros dinâmicos** no `painelFinanceiro` por período e departamento
+- **OAuth 2.0** — Autenticação segura entre Salesforce e API
+- **Machine Learning** — Previsão de gastos futuros
+- **Alertas automáticos** — Notificação ao ultrapassar orçamento
 
 ---
 
 ## 💡 Diferenciais do Projeto
 
-- Integração real entre Salesforce e Python via Apex + HTTP Callout
-- Modelagem de dados estruturada com objetos e relacionamentos customizados
-- Dashboards nativos do Salesforce com 3 visões dos dados
-- Análise de dados aplicada com FastAPI + Pandas
-- Detecção automática de desvio de orçamento
-- Deploy real em produção com URL pública
-- Simulação de cenário empresarial real
-- Documentação clara e organizada
+- ✅ Integração real entre Salesforce e Python via Apex + HTTP Callout
+- ✅ Classe Apex refatorada com boas práticas (separação de responsabilidades, `JSON.serialize()`, try/catch, constantes)
+- ✅ Análise financeira baseada no **histórico completo do departamento**, não apenas no registro individual
+- ✅ Dois LWCs customizados com design moderno e responsivo
+- ✅ Gráficos interativos com Chart.js integrados ao Salesforce
+- ✅ Modelagem de dados estruturada com objetos e relacionamentos customizados
+- ✅ Dashboard nativo + Painel LWC — demonstra domínio low-code e pro-code
+- ✅ Deploy real em produção com URL pública
+- ✅ Projeto versionado com estrutura SFDX no GitHub
+- ✅ Simulação de cenário empresarial real com dados gerados automaticamente
 
 ---
 
-## 📌 Escopo Atual
+## 📌 Escopo do Projeto
 
-Projeto em escala média, com foco em:
+Projeto em escala média-avançada, com foco em:
 
-- Clareza de arquitetura
-- Organização dos dados
-- Integração funcional entre plataformas
-- Aplicabilidade real como portfólio Salesforce
-- Documentação atualizada conforme evolução do projeto
+- Clareza de arquitetura e separação de responsabilidades
+- Organização dos dados e relacionamentos
+- Integração funcional entre plataformas (Salesforce ↔ Python)
+- Componentes visuais modernos com LWC e Chart.js
+- Boas práticas de desenvolvimento Apex e JavaScript
+- Aplicabilidade real como portfólio Salesforce Developer
