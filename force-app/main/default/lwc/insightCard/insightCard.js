@@ -10,7 +10,9 @@ const formatCurrency = (value) => {
     if (value === null || value === undefined) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
-        currency: 'BRL'
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     }).format(value);
 };
 
@@ -82,21 +84,41 @@ export default class InsightCard extends LightningElement {
         return (!val || val === 'N/A') ? '—' : val;
     }
 
-    get alertas() {
-        return this._insightData?.alertas_orcamento ?? [];
-    }
+  get alertas() {
+    const lista = this._insightData?.alertas_orcamento ?? [];
+    return lista.map(alerta =>
+        alerta.replace(/R\$(\d+(?:\.\d+)?)/g, (_, num) => {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(parseFloat(num));
+        })
+    );
+}
 
     get hasAlertas() {
         return this.alertas.length > 0;
     }
 
     get insights() {
-        const lista = this._insightData?.insights ?? [];
-        return lista.map((texto, idx) => ({
-            id: idx,
-            texto: texto.replace(/[💰💸📊]/gu, '').trim()
-        }));
-    }
+    const lista = this._insightData?.insights ?? [];
+    return lista.map((texto, idx) => ({
+        id: idx,
+        texto: this._formatarTextoInsight(texto)
+    }));
+}
+
+_formatarTextoInsight(texto) {
+    return texto
+        .replace(/[💰💸📊]/gu, '')
+        .replace(/R\$(\d+(?:\.\d+)?)/g, (_, num) => {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(parseFloat(num));
+        })
+        .trim();
+}
 
     get _total() {
         const r = this._insightData?.total_receitas ?? 0;
